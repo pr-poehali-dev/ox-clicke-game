@@ -23,6 +23,7 @@ const Index = () => {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [requests, setRequests] = useState<Request[]>([]);
   const [currentUser, setCurrentUser] = useState<User>(null);
+  const [showRequestDialog, setShowRequestDialog] = useState(false);
 
   const correctIP = 'ChadWorld.aternos.me';
   const correctPassword = 'Admin121114';
@@ -64,12 +65,17 @@ const Index = () => {
     if (currentUser === 'DYMEEN') {
       setShowStatusMenu(!showStatusMenu);
     } else if (serverStatus === 'Выключен') {
-      const newRequest: Request = {
-        user: currentUser || '',
-        timestamp: Date.now()
-      };
-      setRequests(prev => [...prev, newRequest]);
+      setShowRequestDialog(true);
     }
+  };
+
+  const handleSendRequest = () => {
+    const newRequest: Request = {
+      user: currentUser || '',
+      timestamp: Date.now()
+    };
+    setRequests(prev => [...prev, newRequest]);
+    setShowRequestDialog(false);
   };
 
   const handleStatusChange = (status: ServerStatus) => {
@@ -235,16 +241,16 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="relative">
-          <div className={`absolute inset-0 blur-3xl opacity-30 ${
+        <div className="text-center mb-12">
+          <div className={`absolute inset-0 blur-3xl opacity-20 pointer-events-none ${
             serverStatus === 'Включен' ? 'bg-green-500' :
             serverStatus === 'В очереди' ? 'bg-yellow-500' :
             'bg-red-500'
           }`} />
           
-          <Card className="relative bg-card/60 backdrop-blur-xl border-primary/30 p-12 text-center">
+          <div className="relative">
             <div className="mb-6">
-              <p className="text-lg text-muted-foreground mb-4">Статус сервера</p>
+              <p className="text-lg text-muted-foreground mb-6">Статус сервера</p>
               
               <div className="relative inline-block">
                 {currentUser === 'DYMEEN' && requests.length > 0 && (
@@ -253,23 +259,10 @@ const Index = () => {
                 
                 <button
                   onClick={handleStatusClick}
-                  className={`text-6xl font-black ${getStatusColor()} hover:scale-105 transition-transform cursor-pointer ${getStatusGlow()} shadow-2xl`}
+                  className={`text-7xl font-black ${getStatusColor()} hover:scale-105 transition-all duration-300 cursor-pointer drop-shadow-2xl`}
                 >
                   {serverStatus}
                 </button>
-              </div>
-
-              <div className="mt-8 flex items-center justify-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${
-                  serverStatus === 'Включен' ? 'bg-green-500 animate-pulse' :
-                  serverStatus === 'В очереди' ? 'bg-yellow-500 animate-pulse' :
-                  'bg-red-500'
-                }`} />
-                <span className="text-muted-foreground">
-                  {serverStatus === 'Включен' && 'Сервер работает нормально'}
-                  {serverStatus === 'В очереди' && 'Ожидание запуска...'}
-                  {serverStatus === 'Выключен' && 'Сервер неактивен'}
-                </span>
               </div>
             </div>
 
@@ -298,14 +291,34 @@ const Index = () => {
               </div>
             )}
 
-            {currentUser !== 'DYMEEN' && serverStatus === 'Выключен' && (
-              <Button
-                onClick={handleStatusClick}
-                className="mt-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:shadow-xl hover:shadow-green-500/50 text-lg px-8 py-6"
-              >
-                <Icon name="Power" size={20} className="mr-2" />
-                Подать запрос на включение
-              </Button>
+            {showRequestDialog && currentUser !== 'DYMEEN' && serverStatus === 'Выключен' && (
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowRequestDialog(false)}>
+                <Card className="bg-card/90 backdrop-blur-xl border-primary/30 p-8 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+                  <div className="text-center mb-6">
+                    <div className="inline-block mb-4 w-16 h-16 bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/50">
+                      <Icon name="Power" size={32} className="text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold mb-2">Запрос на включение</h2>
+                    <p className="text-muted-foreground">Отправить администратору запрос на запуск сервера?</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => setShowRequestDialog(false)}
+                      variant="outline"
+                      className="flex-1 border-primary/30"
+                    >
+                      Отмена
+                    </Button>
+                    <Button
+                      onClick={handleSendRequest}
+                      className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:shadow-xl hover:shadow-green-500/50"
+                    >
+                      <Icon name="Send" size={18} className="mr-2" />
+                      Отправить
+                    </Button>
+                  </div>
+                </Card>
+              </div>
             )}
 
             {currentUser === 'DYMEEN' && requests.length > 0 && (
@@ -337,34 +350,43 @@ const Index = () => {
                 </div>
               </div>
             )}
-          </Card>
+          </div>
         </div>
 
-        <div className="mt-6 grid md:grid-cols-3 gap-4">
-          <Card className="bg-card/40 backdrop-blur-xl border-primary/30 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <Icon name="Users" size={20} className="text-primary" />
-              <span className="font-semibold">Игроки онлайн</span>
-            </div>
-            <p className="text-3xl font-bold">{serverStatus === 'Включен' ? '2/20' : '0/20'}</p>
-          </Card>
+        <Card className="bg-card/40 backdrop-blur-xl border-primary/30 p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <Icon name="Users" size={24} className="text-primary" />
+            <h2 className="text-2xl font-bold">Список игроков</h2>
+          </div>
+          
+          <div className="space-y-3 mb-6">
+            {['DYMEEN', 'ARTYMAN', 'BLEZER1234'].map((player, idx) => (
+              <div
+                key={player}
+                className="flex items-center justify-between p-4 bg-background/30 rounded-lg border border-primary/20 hover:border-primary/40 transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
+                    <Icon name={player === 'DYMEEN' ? 'Crown' : 'User'} size={20} className="text-white" />
+                  </div>
+                  <span className="font-semibold text-lg">{player}</span>
+                </div>
+                {serverStatus === 'Включен' && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-sm text-green-500">Online</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
 
-          <Card className="bg-card/40 backdrop-blur-xl border-primary/30 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <Icon name="Clock" size={20} className="text-primary" />
-              <span className="font-semibold">Аптайм</span>
-            </div>
-            <p className="text-3xl font-bold">{serverStatus === 'Включен' ? '2ч 15м' : '0м'}</p>
-          </Card>
-
-          <Card className="bg-card/40 backdrop-blur-xl border-primary/30 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <Icon name="Activity" size={20} className="text-primary" />
-              <span className="font-semibold">TPS</span>
-            </div>
-            <p className="text-3xl font-bold">{serverStatus === 'Включен' ? '20.0' : '0.0'}</p>
-          </Card>
-        </div>
+          <div className="pt-4 border-t border-primary/20 text-center">
+            <p className="text-muted-foreground text-lg">
+              Часть: <span className="text-primary font-bold">1 Season</span>
+            </p>
+          </div>
+        </Card>
       </div>
     </div>
   );
